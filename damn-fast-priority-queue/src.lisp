@@ -3,7 +3,6 @@
 (defpackage #:damn-fast-priority-queue
   (:use #:cl)
   (:shadow #:map)
-  (:local-nicknames (#:a #:alexandria))
   (:export #:queue #:make-queue #:copy-queue
            #:enqueue #:dequeue #:peek #:size #:trim #:map #:do-queue
            #:queue-size-limit-reached
@@ -44,14 +43,14 @@
                   (:predicate nil) (:copier nil))
   (data-vector (make-array 256 :element-type 'data-type) :type data-vector-type)
   (prio-vector (make-array 256 :element-type 'prio-type) :type prio-vector-type)
-  (size 0 :type a:array-length)
+  (size 0 :type alexandria:array-length)
   (extension-factor 2 :type extension-factor-type)
   (extend-queue-p t :type boolean))
 
 (declaim (inline make-queue copy-queue))
 
 (declaim (ftype (function
-                 (&optional a:array-index extension-factor-type boolean)
+                 (&optional alexandria:array-index extension-factor-type boolean)
                  (values queue &optional))
                 make-queue))
 (defun make-queue (&optional
@@ -86,13 +85,13 @@
 
 (declaim (inline heapify-upwards enqueue))
 
-(declaim (ftype (function (data-vector-type prio-vector-type a:array-length)
+(declaim (ftype (function (data-vector-type prio-vector-type alexandria:array-length)
                           (values null &optional))
                 heapify-upwards))
 (defun heapify-upwards (data-vector prio-vector index)
   (declare (type data-vector-type data-vector))
   (declare (type prio-vector-type prio-vector))
-  (declare (type a:array-length index))
+  (declare (type alexandria:array-length index))
   (declare #.*optimize-qualities*)
   (do ((child-index index parent-index)
        (parent-index (ash (1- index) -1) (ash (1- parent-index) -1)))
@@ -121,7 +120,7 @@
           (error 'queue-size-limit-reached :queue queue :element object))
         (let ((new-length (max 1 (mod (* length extension-factor)
                                       (ash 1 64)))))
-          (declare (type a:array-length new-length))
+          (declare (type alexandria:array-length new-length))
           (when (<= new-length length)
             (error "Integer overflow while resizing array: new-length ~D is ~
                     smaller than old length ~D" new-length length))
@@ -138,7 +137,7 @@
 
 (declaim (inline heapify-downwards dequeue))
 
-(declaim (ftype (function (data-vector-type prio-vector-type a:array-index)
+(declaim (ftype (function (data-vector-type prio-vector-type alexandria:array-index)
                           (values null &optional))
                 heapify-downwards))
 (defun heapify-downwards (data-vector prio-vector size)
@@ -209,7 +208,7 @@
       (values nil nil)
       (values (aref (%data-vector queue) 0) t)))
 
-(declaim (ftype (function (queue) (values a:array-length &optional)) size))
+(declaim (ftype (function (queue) (values alexandria:array-length &optional)) size))
 (defun size (queue)
   (declare (type queue queue))
   (declare #.*optimize-qualities*)
@@ -232,8 +231,8 @@
         do (funcall function data)))
 
 (defmacro do-queue ((object queue &optional result) &body body)
-  (multiple-value-bind (forms declarations) (a:parse-body body)
-    (a:once-only (queue)
+  (multiple-value-bind (forms declarations) (alexandria:parse-body body)
+    (alexandria:once-only (queue)
       `(loop repeat (%size ,queue)
              for ,object across (%data-vector ,queue)
              do (locally ,@declarations (tagbody ,@forms))
@@ -252,6 +251,6 @@
 (define-condition queue-size-limit-reached (error)
   ((%queue :reader queue-size-limit-reached-queue :initarg :queue)
    (%object :reader queue-size-limit-reached-object :initarg :element))
-  (:default-initargs :queue (a:required-argument :queue)
-                     :object (a:required-argument :object))
+  (:default-initargs :queue (alexandria:required-argument :queue)
+                     :object (alexandria:required-argument :object))
   (:report report-queue-size-limit-reached))
